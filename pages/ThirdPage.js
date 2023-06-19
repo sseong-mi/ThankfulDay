@@ -23,8 +23,10 @@ const ThirdPage = ({ route }) => {
   const [sumDays, setsumDays] = useState('');
   const [sumTags, setSumTags] = useState('');
   const [sumDiarys, setSumDiarys] = useState('');
-  const [startDate, setStartDate] = useState(moment().startOf('week'));
-  const [endDate, setEndDate] = useState(moment().endOf('week'));
+  const [startWDate, setStartWDate] = useState(moment().startOf('week'));
+  const [endWDate, setEndWDate] = useState(moment().endOf('week'));
+  const [startMDate, setStartMDate] = useState(moment().startOf('month'));
+  const [endMDate, setEndMDate] = useState(moment().endOf('month'));
   const [weekOrder, setWeekOrder] = useState('');
 
 
@@ -33,13 +35,18 @@ const ThirdPage = ({ route }) => {
 
   const fetchCal = async () => {
     // Fetch data for the selected week or month based on the current view mode
-    const startDate = !isMonthlyView ? moment(selectedDate).startOf('week') : moment(selectedDate).startOf('month');
-    const endDate = !isMonthlyView ? moment(selectedDate).endOf('week') : moment(selectedDate).endOf('month');
+    const startWDate = moment(selectedDate).startOf('week');
+    const endWDate = moment(selectedDate).endOf('week');
 
-    const startOfMonth = moment(startDate).startOf('month');
-    setStartDate(startDate);
-    setEndDate(endDate);
-    const weekOfMonth = Math.ceil(startDate.diff(startOfMonth, 'days') / 7);
+    const startMDate = moment(selectedDate).startOf('month');
+    const endMDate = moment(selectedDate).endOf('month');
+
+    setStartWDate(startWDate);
+    setEndWDate(endWDate);
+    setStartMDate(startMDate);
+    setEndMDate(endMDate);
+
+    const weekOfMonth = Math.ceil(startWDate.diff(startMDate, 'days') / 7);
     let weekOrder = '';
     if (weekOfMonth === 1) {
       weekOrder = '1st';
@@ -70,34 +77,59 @@ const ThirdPage = ({ route }) => {
   };
 
   const handleDayPress = (date) => {
-    setSelectedDate(date.dateString);
-    hideDatePicker();
+    setSelectedDate(date.dateString); 
+    fetchData();
   };
 
-  const getTopTags = (diaryEntries) => {
+  const handleMonthPress = (bool) => {
+    setisMonthlyView(bool);
+    fetchData();
+  };
+
+  const getTopTags = async (diaryEntries) => {
     const tagCounts = {};
     const dayCounts = {};
-    // Count the tag occurrences
-    diaryEntries.forEach((entry) => {
-      const entryDate = moment(entry.date);
-      if (entryDate.isSameOrAfter(startDate) && entryDate.isSameOrBefore(endDate)){
-        if (dayCounts[entryDate]){
-          dayCounts[entryDate]++;
-        } else{
-          dayCounts[entryDate] = 1;
-        }
+    await Promise.all(
+      diaryEntries.map(async (entry) => {
+        const entryDate = moment(entry.date);
+        
+        let startDate = startMDate;
+        let endDate = endMDate;
 
-        const tagsUsed = entry.tagsUsed || [];
-        tagsUsed.forEach((tag) => {
-          const word = tag;
-          if (tagCounts[word]) {
-            tagCounts[word]++;
+        if (isMonthlyView){
+          startDate = startMDate;
+          endDate = endMDate;
+        }
+        else{
+          startDate = startWDate;
+          endDate = endWDate;
+        }
+        if (
+          entryDate.isSameOrAfter(startDate) &&
+          entryDate.isSameOrBefore(endDate)
+        ) {
+          if (dayCounts[entryDate]) {
+            dayCounts[entryDate]++;
           } else {
-            tagCounts[word] = 1;
+            dayCounts[entryDate] = 1;
           }
-        });
-      }
-    });
+  
+          const tagsUsed = entry.tagsUsed || [];
+  
+          await Promise.all(
+            tagsUsed.map(async (tag) => {
+              const word = tag;
+  
+              if (tagCounts[word]) {
+                tagCounts[word]++;
+              } else {
+                tagCounts[word] = 1;
+              }
+            })
+          );
+        }
+      })
+    );
   
     // Sort the tags by count in descending order
     const sortedTags = Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a]);
@@ -114,7 +146,7 @@ const ThirdPage = ({ route }) => {
       const payload = {
         userId: user._id,
       };
-      
+  
       const response = await fetch(IPConfig + 'user/getdata', {
         method: 'POST',
         headers: {
@@ -130,9 +162,9 @@ const ThirdPage = ({ route }) => {
   
         // Update the user state with the updated diary entries
         const diaryEntries = updatedUser.diary || [];
-        const staticsEntries = getTopTags(diaryEntries); // Assuming diaryEntries is the array containing diary entries
+        const staticsEntries = await getTopTags(diaryEntries);
         setTopTags(staticsEntries.sortedTags);
-        setSumDiarys(staticsEntries.sumDays);
+        setSumDiarys(staticsEntries.sumDiarys);
         setsumDays(staticsEntries.sumDays);
         setSumTags(staticsEntries.sumTags);
       } else {
@@ -158,12 +190,12 @@ const ThirdPage = ({ route }) => {
             </Text>
           </View>
           <TouchableOpacity
-            onPress={() => setisMonthlyView(!isMonthlyView)} // Toggle the view mode when the switch is pressed
+ // Toggle the view mode when the switch is pressed
             style={styles.switchButton}
           >
             <SwitchToggle
               switchOn={isMonthlyView}
-              onPress={() => setisMonthlyView(!isMonthlyView)} // Toggle the view mode when the switch is pressed
+              onPress={() => handleMonthPress(!isMonthlyView)} // Toggle the view mode when the switch is pressed
               circleColorOn="#FFFFFF"
               circleColorOff="#FFFFFF"
               backgroundColorOn="#424242"
@@ -191,7 +223,7 @@ const ThirdPage = ({ route }) => {
             [selectedDate]: {
               customStyles: {
                 container: {
-                  backgroundColor: 'green',
+                  backgroundColor: '#FFD7AE',
                 },
               },
               renderMarker: () => <CustomMarker />,
@@ -199,8 +231,8 @@ const ThirdPage = ({ route }) => {
           }}
           theme={{
             selectedDayBackgroundColor: '#007AFF',
-            selectedDayTextColor: '#FFFFFF',
-            todayTextColor: '#007AFF',
+            selectedDayTextColor: '#000000',
+            todayTextColor: '#000000',
             arrowColor: 'black',
           }}
           style={styles.calendar}

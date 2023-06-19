@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, SafeAreaView, ScrollView, StatusBar} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import moment from 'moment';
 import { Calendar } from 'react-native-calendars';
@@ -74,7 +74,7 @@ const SecondPage = ({ route }) => {
       if (markedDatesObj[date]) {
         markedDatesObj[date] = {
           ...markedDatesObj[date],
-          selectedColor: colorSet[colorSet.indexOf(colorSet[0]) + 1],
+          selectedColor: colorSet[colorSet.indexOf(markedDatesObj[date].selectedColor) + 1],
         };
       } else {
         markedDatesObj[date] = {
@@ -99,7 +99,7 @@ const SecondPage = ({ route }) => {
     if (diaryEntries.length === 0) {
       return (
         <View style={styles.expandedContent}>
-          <Text style={{textAlign: 'left', fontFamily: 'Neucha_400Regular', fontSize: 20}}>No diary entries found for selected date</Text>
+          <Text style={{textAlign: 'left', fontFamily: 'Neucha_400Regular', fontSize: 20, paddingLeft: '10%'}}>No diary entries found for selected date</Text>
         </View>
       );
     }
@@ -140,7 +140,8 @@ const SecondPage = ({ route }) => {
 
     // Render the content for the expanded content here
     return (
-      <View style={styles.expandedContent}>
+      <SafeAreaView style={styles.expandedContent}>
+        <ScrollView contentContainerStyle={styles.expandedContentContainer} showsVerticalScrollIndicator={false}>
         {diaryEntries.map((entry) => (
           <View key={entry._id}>
             <Text style={styles.expandedText}>{entry.time}</Text>
@@ -156,6 +157,7 @@ const SecondPage = ({ route }) => {
             </View>
           </View>
         ))}
+        </ScrollView>
       <Modal isVisible={alertVisible} backdropOpacity={0} onBackdropPress={hideDeleteDiary}>
         <View style={styles.deleteTagcontainer}>
           <View style={styles.modal}>
@@ -168,32 +170,36 @@ const SecondPage = ({ route }) => {
           </View>
         </View>
       </Modal>
-      </View>
+      </SafeAreaView>
     );
   };
 
   const renderCollapsedContent = () => {
     const diaryEntries = user.diary.filter((entry) => entry.date.slice(0, 10) === selectedDate);
-
+  
     if (diaryEntries.length === 0) {
       return (
         <View style={styles.collapsedContent}>
-          <Text style={{textAlign: 'left', fontFamily: 'Neucha_400Regular', fontSize: 20}}>No diary entries found for selected date</Text>
+          <Text style={{ textAlign: 'left', fontFamily: 'Neucha_400Regular', fontSize: 20, paddingLeft: '10%'}}>
+            No diary entries found for selected date
+          </Text>
         </View>
       );
     }
-    // Render the content for the collapsed state here
+  
     return (
-      <View style={styles.collapsedContent}>
-        {diaryEntries.map((entry) => (
-          <View key={entry._id} >
-            <Text style={styles.collapsedTextTags}>{entry.tagsUsed.join(', ')}</Text>
-            <Text style={styles.collapsedTextNotes}>
-              {entry.notes === '' ? 'No notes' : entry.notes}
-            </Text>
-          </View>
-        ))}
-      </View>
+      <SafeAreaView style={styles.collapsedContent}>
+        <ScrollView contentContainerStyle={styles.collapsedContentContainer} showsVerticalScrollIndicator={false}>
+          {diaryEntries.map((entry) => (
+            <View key={entry._id}>
+              <Text style={styles.collapsedTextTags}>{entry.tagsUsed.join(', ')}</Text>
+              <Text style={styles.collapsedTextNotes}>
+                {entry.notes === '' ? 'No notes' : entry.notes}
+              </Text>
+            </View>
+          ))}
+        </ScrollView>
+      </SafeAreaView>
     );
   };
 
@@ -333,9 +339,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start', // Align content at the top
     alignItems: 'flex-start',
-    paddingTop: '10%', // Add padding to create space from the top
+    paddingBottom: '7%', // Add padding to create space from the top
+    paddingTop: '7%',
     height: 750,
-    paddingLeft: "10%"
+    marginRight: 50
+  },
+  collapsedContentContainer: {
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    height: 900,
+    paddingLeft: '10%',
+    flexGrow: 1,
   },
   collapsedTextTags: {
     fontFamily: 'Neucha_400Regular', 
@@ -365,7 +379,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingTop: 20, // Add padding to create space from the top
     height: 750,
-    paddingLeft: "10%",
+  },
+  expandedContentContainer: {
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    height: 1000,
+    paddingLeft: '10%',
+    flexGrow: 1,
   },
   expandedButtons: {
     flexDirection: 'row',

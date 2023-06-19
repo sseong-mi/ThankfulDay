@@ -56,8 +56,17 @@ const Home = ({ route }) => {
                 Hello, {userData.nickname} !
               </Text>
             </ImageBackground>
+            
           </View>
         ),
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          position: 'absolute',
+          elevation: 0,
+          height: 70,
+
+        },
+        
         tabBarLabel: () => null,
         tabBarIcon: ({ focused }) => {
           let icon;
@@ -75,27 +84,14 @@ const Home = ({ route }) => {
             icon = ThirdIcon;
             style = { height: 38, width: 39 };
           }
-
+          
           // Return the appropriate icon component based on the route and focus
-          return <Image source={icon} style={style}></Image>;
-        },
-        tabBarOptions: {
-          showIcon: true,
-          style: {
-            backgroundColor: 'transparent',
-            borderTopWidth: 0,
-            position: 'absolute',
-            elevation: 0, // <-- This should remove the shadow effect on Android
-          },
-          labelStyle: {
-            fontSize: 12,
-          },
-          // Custom tab bar component
-          // tabBarButton: (props) => (
-          //   <CustomTabBarButton {...props} />
-          // ),
+          return (<View>
+            <Image source={icon} style={style} />
+          </View>);
         },
       })}
+  
     >
       <Tab.Screen
         name="FirstPage"
